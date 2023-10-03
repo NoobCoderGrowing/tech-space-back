@@ -19,19 +19,20 @@ public class WebConfig {
     @Bean
     public FilterRegistrationBean corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
-        //1.允许任何来源
+        // allow all ip
         corsConfiguration.setAllowedOriginPatterns(Collections.singletonList("*"));
-        //2.允许任何请求头
+        // all all headers
         corsConfiguration.addAllowedHeader(CorsConfiguration.ALL);
-        //3.允许任何方法
+        //all all methods
         corsConfiguration.addAllowedMethod(CorsConfiguration.ALL);
-        //4.允许凭证
+        //all cookies
         corsConfiguration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
         CorsFilter corsFilter = new CorsFilter(source);
         FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(corsFilter);
+//        set this filter before security filter which is 100
         bean.setOrder(-101);
         return bean;
     }

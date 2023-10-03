@@ -11,7 +11,7 @@ public class HealthCheck {
     @ResponseBody
     public HashMap<String, Boolean> isHealthy(){
         HashMap response = new HashMap<String, Boolean>();
-        response.put("isHealthu",true);
+        response.put("isHealthy",true);
         return response;
     }
 }
