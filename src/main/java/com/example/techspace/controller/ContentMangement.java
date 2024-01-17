@@ -5,13 +5,17 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.example.techspace.ArticleRepository;
 import com.example.techspace.entity.Article;
+import com.example.techspace.service.ArticleService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -19,8 +23,17 @@ import java.util.Map;
 @EnableMethodSecurity
 public class ContentMangement {
 
+
+
     @Resource
     ArticleRepository articleRepository;
+
+    @Autowired
+    @Qualifier("articleMap")
+    ConcurrentHashMap<String, ConcurrentHashMap<String, String>> articleMap;
+
+    @Resource
+    ArticleService articleService;
 
     @RequestMapping(value = "/upload/article", method = {RequestMethod.POST, RequestMethod.GET})
     @ResponseBody
@@ -29,9 +42,15 @@ public class ContentMangement {
         String params = JSONObject.toJSONString(submitArticle);
         System.out.println(params);
         Article article = JSON.parseObject(params, Article.class);
-        articleRepository.save(article);
+        String title = article.getTitle();
         HashMap<String, Boolean> response = new HashMap<String, Boolean>();
-        response.put("uploaded", true);
+        if(!articleMap.get("tech").contains(title)){
+            articleRepository.save(article);
+            articleService.hourlyUpdate();
+            response.put("uploaded", true);
+        }else{
+            response.put("uploaded", false);
+        }
         return response;
     }
 }
