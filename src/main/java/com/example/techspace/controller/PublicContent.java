@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -37,32 +36,29 @@ public class PublicContent {
         return articles;
     }
 
-    @RequestMapping(value = "/retrieve/articleList", method = RequestMethod.GET)
+    @RequestMapping(value = "/retrieve/articleMap", method = RequestMethod.GET)
     @ResponseBody
-    public Set<String> retrieveArticleList(){
+    public ConcurrentHashMap<String, ConcurrentHashMap<String, String>> retrieveArticleMap(){
         articleLock.readLock().lock();
         try {
-            ConcurrentHashMap<String, String> titleIDMap = articleMap.get("tech");
-            Set<String> titleSet = titleIDMap.keySet();
-            return titleSet;
+            return articleMap;
         }finally {
             articleLock.readLock().unlock();
         }
     }
 
-    @RequestMapping(value = "/retrieve/articleByTitle", method = RequestMethod.GET)
+    @RequestMapping(value = "/retrieve/articleByTitleCategory", method = RequestMethod.GET)
     @ResponseBody
-    public Article retrieveArticleByTitle(@RequestParam String title){
+    public Article retrieveArticleByTitle(@RequestParam String title, @RequestParam String category){
         articleLock.readLock().lock();
         try {
-            ConcurrentHashMap<String, String> titleIDMap = articleMap.get("tech");
+            ConcurrentHashMap<String, String> titleIDMap = articleMap.get(category);
             String id = titleIDMap.get(title);
             Article article = articleRepository.findById(id).get();
             return article;
         }finally {
             articleLock.readLock().unlock();
         }
-
     }
 
 

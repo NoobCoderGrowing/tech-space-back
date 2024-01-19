@@ -10,4 +10,5 @@ public class Article {
     String title;
     String date;
     String content;
+    String category;
 }

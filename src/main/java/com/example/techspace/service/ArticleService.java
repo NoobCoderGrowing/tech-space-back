@@ -5,6 +5,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -31,18 +32,26 @@ public class ArticleService {
 
     @Scheduled(cron = "0 0 * * * ?")
     @PostConstruct
+    @Async
     public void hourlyUpdate(){
         articleLock.writeLock().lock();
         try {
             articleMap.clear();
-            ConcurrentHashMap<String, String> titleIDMap = new ConcurrentHashMap<>();
+
             List<Article> articles = articleRepository.findAll();
             for (Article article : articles) {
+                ConcurrentHashMap<String, String> titleIDMap;
                 String title = article.getTitle();
                 String id = article.get_id();
+                String category = article.getCategory();
+                if(!articleMap.contains(category)){
+                    titleIDMap = new ConcurrentHashMap<>();
+                    articleMap.put(category, titleIDMap);
+                }else{
+                    titleIDMap = articleMap.get(category);
+                }
                 titleIDMap.put(title,id);
             }
-            articleMap.put("tech", titleIDMap);
         }finally {
             articleLock.writeLock().unlock();
         }
