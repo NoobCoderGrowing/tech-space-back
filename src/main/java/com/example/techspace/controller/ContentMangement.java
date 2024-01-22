@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -45,7 +46,7 @@ public class ContentMangement {
         String title = article.getTitle();
         String category = article.getCategory();
         HashMap<String, Boolean> response = new HashMap<String, Boolean>();
-        if(!articleMap.get(category).contains(title)){
+        if(!articleMap.get(category).containsKey(title)){
             articleRepository.save(article);
             articleService.hourlyUpdate();
             response.put("uploaded", true);
@@ -59,20 +60,28 @@ public class ContentMangement {
     @RequestMapping(value = "/test", method = {RequestMethod.POST, RequestMethod.GET})
     @ResponseBody
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    public HashMap<String, Boolean> test(@RequestBody Map<String,String> submitArticle){
+    public HashMap<String, Boolean> test(@RequestBody Map<String,String> submitArticle) {
         String params = JSONObject.toJSONString(submitArticle);
         System.out.println(params);
         Article article = JSON.parseObject(params, Article.class);
         String title = article.getTitle();
         String category = article.getCategory();
         HashMap<String, Boolean> response = new HashMap<String, Boolean>();
-        if(!articleMap.contains(category) || !articleMap.get(category).contains(title)){
-            articleRepository.save(article);
-            articleService.hourlyUpdate();
-            response.put("uploaded", true);
-        }else{
-            response.put("uploaded", false);
+        if (!articleMap.containsKey(category) || !articleMap.get(category).containsKey(title)){
+                articleRepository.save(article);
+                articleService.hourlyUpdate();
+                response.put("uploaded", true);
+                return response;
         }
+        response.put("uploaded", false);
         return response;
+    }
+
+    @RequestMapping(value = "/deleteAll", method = {RequestMethod.POST, RequestMethod.GET})
+    @ResponseBody
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
+    public List<Article> deleteAll() {
+        articleRepository.deleteAll();
+        return articleRepository.findAll();
     }
 }
