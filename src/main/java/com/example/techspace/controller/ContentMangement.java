@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -24,6 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @EnableMethodSecurity
 public class ContentMangement {
 
+    @Autowired
+    @Qualifier("articleLock")
+    ReadWriteLock articleLock;
 
 
     @Resource
@@ -41,37 +45,20 @@ public class ContentMangement {
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public HashMap<String, Boolean> uploadArticle(@RequestBody Map<String,String> submitArticle){
         String params = JSONObject.toJSONString(submitArticle);
-        System.out.println(params);
-        Article article = JSON.parseObject(params, Article.class);
-        String title = article.getTitle();
-        String category = article.getCategory();
-        HashMap<String, Boolean> response = new HashMap<String, Boolean>();
-        if(!articleMap.get(category).containsKey(title)){
-            articleRepository.save(article);
-            articleService.hourlyUpdate();
-            response.put("uploaded", true);
-        }else{
-            response.put("uploaded", false);
-        }
-        return response;
-    }
-
-
-    @RequestMapping(value = "/test", method = {RequestMethod.POST, RequestMethod.GET})
-    @ResponseBody
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    public HashMap<String, Boolean> test(@RequestBody Map<String,String> submitArticle) {
-        String params = JSONObject.toJSONString(submitArticle);
-        System.out.println(params);
         Article article = JSON.parseObject(params, Article.class);
         String title = article.getTitle();
         String category = article.getCategory();
         HashMap<String, Boolean> response = new HashMap<String, Boolean>();
         if (!articleMap.containsKey(category) || !articleMap.get(category).containsKey(title)){
+            while(!articleLock.writeLock().tryLock()){}
+            try {
                 articleRepository.save(article);
-                articleService.hourlyUpdate();
                 response.put("uploaded", true);
                 return response;
+            }finally {
+                articleLock.writeLock().unlock();
+                articleService.hourlyUpdate();
+            }
         }
         response.put("uploaded", false);
         return response;
@@ -81,7 +68,55 @@ public class ContentMangement {
     @ResponseBody
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public List<Article> deleteAll() {
-        articleRepository.deleteAll();
-        return articleRepository.findAll();
+        while(!articleLock.writeLock().tryLock()){}
+        try {
+            articleRepository.deleteAll();
+            return articleRepository.findAll();
+        }finally {
+            articleLock.writeLock().unlock();
+            articleService.hourlyUpdate();
+        }
+    }
+
+    @RequestMapping(value = "/delete/articleByID", method = RequestMethod.POST)
+    @ResponseBody
+    public Map<String, Boolean> deleteArticleByID(@RequestBody Map<String,String> request){
+
+        HashMap<String, Boolean> response = new HashMap<String, Boolean>();
+        String id = request.get("id");
+        while(!articleLock.writeLock().tryLock()){}
+        try {
+            articleRepository.deleteById(id);
+            response.put("success", true);
+            return response;
+        }finally {
+            articleLock.writeLock().unlock();
+            articleService.hourlyUpdate();
+        }
+    }
+
+    @RequestMapping(value = "/update/articles", method = RequestMethod.GET)
+    @ResponseBody
+    public String updateArticles(){
+        articleLock.writeLock().lock();
+        try{
+            List<Article> articles = articleRepository.findAll();
+            for (int i = 0; i < articles.size(); i++) {
+                String id = articles.get(i).get_id();
+                String title = articles.get(i).getTitle();
+                if(title.contains("Learning to Rank")){
+                    articles.get(i).setCategory("Learning to Rank");
+                }else{
+                    articles.get(i).setCategory("Data Mining");
+                }
+                articleRepository.deleteById(id);;
+                articleRepository.save(articles.get(i));
+            }
+            return "sucess";
+        }finally {
+            articleLock.writeLock().unlock();
+            articleService.hourlyUpdate();
+        }
+
     }
 }

@@ -6,6 +6,7 @@ import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import com.example.techspace.ArticleRepository;
 
 @Service
+@EnableScheduling
 public class ArticleService {
 
     @Resource
@@ -53,6 +55,5 @@ public class ArticleService {
         }finally {
             articleLock.writeLock().unlock();
         }
-
     }
 }
