@@ -26,7 +26,7 @@ public class ArticleService {
 
     @Autowired
     @Qualifier("articleMap")
-    ConcurrentHashMap<String, ConcurrentHashMap> articleMap;
+    ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentHashMap<String,String>>>  articleMap;
 
     @Autowired
     @Qualifier("articleLock")
