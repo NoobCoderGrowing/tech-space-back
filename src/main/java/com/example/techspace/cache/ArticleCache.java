@@ -8,8 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ArticleCache {
 
     @Bean(name = "articleMap")
-    public ConcurrentHashMap<String, ConcurrentHashMap<String, String>> articleMapInit(){
-        ConcurrentHashMap<String, ConcurrentHashMap<String, String>> articleMap = new ConcurrentHashMap<>();
+    public ConcurrentHashMap articleMapInit(){
+        ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentHashMap<String,String>>> articleMap =
+                new ConcurrentHashMap<>();
         return articleMap;
     }
 
