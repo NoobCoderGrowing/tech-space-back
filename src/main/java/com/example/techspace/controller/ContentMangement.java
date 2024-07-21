@@ -13,7 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -34,7 +33,7 @@ public class ContentMangement {
 
     @Autowired
     @Qualifier("articleMap")
-    ConcurrentHashMap<String, ConcurrentHashMap<String, String>> articleMap;
+    ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentHashMap<String,String>>> articleMap;
 
     @Resource
     ArticleService articleService;
@@ -63,22 +62,9 @@ public class ContentMangement {
         return response;
     }
 
-    @RequestMapping(value = "/deleteAll", method = {RequestMethod.POST, RequestMethod.GET})
-    @ResponseBody
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
-    public List<Article> deleteAll() {
-        while(!articleLock.writeLock().tryLock()){}
-        try {
-            articleRepository.deleteAll();
-            return articleRepository.findAll();
-        }finally {
-            articleLock.writeLock().unlock();
-            articleService.hourlyUpdate();
-        }
-    }
-
     @RequestMapping(value = "/delete/articleByID", method = RequestMethod.POST)
     @ResponseBody
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     public Map<String, Boolean> deleteArticleByID(@RequestBody Map<String,String> request){
 
         HashMap<String, Boolean> response = new HashMap<String, Boolean>();
@@ -92,30 +78,5 @@ public class ContentMangement {
             articleLock.writeLock().unlock();
             articleService.hourlyUpdate();
         }
-    }
-
-    @RequestMapping(value = "/update/articles", method = RequestMethod.GET)
-    @ResponseBody
-    public String updateArticles(){
-        articleLock.writeLock().lock();
-        try{
-            List<Article> articles = articleRepository.findAll();
-            for (int i = 0; i < articles.size(); i++) {
-                String id = articles.get(i).get_id();
-                String title = articles.get(i).getTitle();
-                if(title.contains("Learning to Rank")){
-                    articles.get(i).setCategory("Learning to Rank");
-                }else{
-                    articles.get(i).setCategory("Data Mining");
-                }
-                articleRepository.deleteById(id);;
-                articleRepository.save(articles.get(i));
-            }
-            return "sucess";
-        }finally {
-            articleLock.writeLock().unlock();
-            articleService.hourlyUpdate();
-        }
-
     }
 }

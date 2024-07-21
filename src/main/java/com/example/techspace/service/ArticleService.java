@@ -16,8 +16,9 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import com.example.techspace.ArticleRepository;
 
-@Service
+
 @EnableScheduling
+@Service
 public class ArticleService {
 
     @Resource
@@ -25,7 +26,7 @@ public class ArticleService {
 
     @Autowired
     @Qualifier("articleMap")
-    ConcurrentHashMap<String, ConcurrentHashMap<String, String>> articleMap;
+    ConcurrentHashMap<String, ConcurrentHashMap<String, ConcurrentHashMap<String,String>>>  articleMap;
 
     @Autowired
     @Qualifier("articleLock")
@@ -40,17 +41,21 @@ public class ArticleService {
             articleMap.clear();
             List<Article> articles = articleRepository.findAll();
             for (Article article : articles) {
-                ConcurrentHashMap<String, String> titleIDMap;
+                ConcurrentHashMap<String, ConcurrentHashMap<String,String>> titleArticleMap;
                 String title = article.getTitle();
                 String id = article.get_id();
                 String category = article.getCategory();
+                String date = article.getDate();
                 if(!articleMap.containsKey(category)){
-                    titleIDMap = new ConcurrentHashMap<>();
-                    articleMap.put(category, titleIDMap);
+                    titleArticleMap = new ConcurrentHashMap<>();
+                    articleMap.put(category, titleArticleMap);
                 }else{
-                    titleIDMap = articleMap.get(category);
+                    titleArticleMap = articleMap.get(category);
                 }
-                titleIDMap.put(title,id);
+                ConcurrentHashMap<String,String> articlePropertiesMap = new ConcurrentHashMap<>();
+                articlePropertiesMap.put("id", id);
+                articlePropertiesMap.put("date", date);
+                titleArticleMap.put(title,articlePropertiesMap);
             }
         }finally {
             articleLock.writeLock().unlock();

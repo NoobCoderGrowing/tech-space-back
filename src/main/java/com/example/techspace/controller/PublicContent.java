@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -24,7 +23,7 @@ public class PublicContent {
 
     @Autowired
     @Qualifier("articleMap")
-    ConcurrentHashMap<String, ConcurrentHashMap<String, String>> articleMap;
+    ConcurrentHashMap articleMap;
 
     @Autowired
     @Qualifier("articleLock")
@@ -32,7 +31,7 @@ public class PublicContent {
 
     @RequestMapping(value = "/retrieve/articleMap", method = RequestMethod.GET)
     @ResponseBody
-    public ConcurrentHashMap<String, ConcurrentHashMap<String, String>> retrieveArticleMap(){
+    public ConcurrentHashMap retrieveArticleMap(){
         while(!articleLock.readLock().tryLock()){}
         try {
             return articleMap;
